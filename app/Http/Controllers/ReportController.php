@@ -1,22 +1,23 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Employee;
+use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
-    public function totalSalaryByDepartment()
+    public function salaryByDepartment()
     {
-        // 1. Query the database: group by department and sum the salary
-        $reportData = Employee::selectRaw('department, SUM(salary) as total_salary')
-            ->groupBy('department')
-            ->get();
+        $rows = Employee::select('department', DB::raw('SUM(salary) as total'))
+                       ->groupBy('department')
+                       ->get();
 
-        // 2. Format the collection into the required JSON format: "Department" => TotalSalary
-        $formattedData = $reportData->pluck('total_salary', 'department');
+        $result = [];
+        foreach ($rows as $r) {
+            $dept = $r->department ?: 'Unassigned';
+            $result[$dept] = (float) $r->total;
+        }
 
-        return response()->json($formattedData);
+        return response()->json($result);
     }
 }

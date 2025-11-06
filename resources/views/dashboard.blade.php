@@ -11,6 +11,12 @@
                 <div class="p-6 text-gray-900">
                     {{ __("You're logged in!") }}
                 </div>
+                <div class="p-4">
+                    <a href="{{ route('employees.index') }}" 
+                        class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded">
+                        Go to Employees Page
+                    </a>
+                </div>
             </div>
         </div>
     </div>

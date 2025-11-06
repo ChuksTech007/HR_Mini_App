@@ -1,88 +1,177 @@
-# HR Mini-App (Laravel)
+# HR Mini App (Laravel)
 
-This is a Laravel-based HR mini-application to manage employees.
+## Overview
+This is a simple HR management system built with **Laravel**. It allows Admin users to manage employees and generate salary reports by department. The application also includes authentication, role management, and validation.
 
-## Features implemented
+---
 
-- Authentication using Laravel's built-in scaffolding (hashed passwords).
-- Role management: `role` column on users (`admin` / `normal`) and `AdminMiddleware` to protect admin routes.
-- Employee CRUD (Add, Edit, Delete, List) via `EmployeeController` (JSON REST endpoints).
-- Validation via `StoreEmployeeRequest` (email unique, salary numeric, etc.).
-- Report API endpoint that returns **total salary per department** in JSON:
-  - `GET /api/reports/salary-by-department`
-- Bonus features:
-  - Search / filter on employee listing: by `department`, `min_salary`, `max_salary`, `q` (name or position).
-  - Role management present (`role` field + middleware).
+## Features
+- User authentication (Laravel Breeze)
+- Passwords securely hashed using `Hash::make`
+- Role-based access control (Admin / Normal User)
+- Employee CRUD (Create, Read, Update, Delete)
+- Validation (unique email, numeric salary)
+- Report endpoint: total salary per department (JSON)
+- Optional search & filter by department or salary range
 
-## Important files / routes
+---
 
-- Migrations: `database/migrations/*` (creates `users`, `employees`, adds `role`).
-- Employee model: `app/Models/Employee.php`
-- Employee controller: `app/Http/Controllers/EmployeeController.php` (REST)
-- Report controller: `app/Http/Controllers/ReportController.php`
-- API route for report: `routes/api.php` -> `/api/reports/salary-by-department`
-- Web routes: `routes/web.php` registers resource routes for `employees` under `auth` + `admin` middleware.
+## Installation and Setup
 
-## How to run (local)
+### 1. Clone Repository
+```bash
+git clone https://github.com/ChuksTech007/HR_Mini_App.git
+cd hr-mini-app
+```
 
-1. Requirements:
-   - PHP 8.2+
-   - Composer
-   - MySQL / MariaDB (or other DB supported by Laravel)
-   - Node.js & npm (for frontend scaffolding if needed)
+### 2. Install Dependencies
+```bash
+composer install
+npm install
+npm run dev
+```
 
-2. Steps:
-   ```bash
-   # unzip / place project folder, then:
-   cd "HR Mini-App"
-   composer install
-   cp .env.example .env
-   # set DB credentials in .env
-   php artisan key:generate
-   php artisan migrate
-   # optionally seed users or create an admin user
-   ```
+### 3. Environment Configuration
+Copy `.env.example` to `.env` and update database credentials.
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-3. Authentication:
-   - The project includes Laravel auth scaffolding. Create a user and set `role` to `admin` in the DB to access `/employees` resource routes.
+Update the following in your `.env` file:
+```
+DB_DATABASE=hr_app
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-## API examples
+### 4. Run Migrations & Seeders
+```bash
+php artisan migrate
+php artisan db:seed --class=AdminUserSeeder
+```
 
-- List employees (with filters):
-  ```
-  GET /employees?department=Engineering&min_salary=50000&max_salary=200000&q=John
-  ```
+The seeder creates an admin user automatically.
 
-- Create employee:
-  ```
-  POST /employees
-  {
-    "name":"John Doe",
-    "email":"john@example.com",
-    "position":"Engineer",
-    "salary":50000,
-    "department":"Engineering"
-  }
-  ```
+**Default Admin Credentials:**
+```
+Email: admin@example.com
+Password: Admin123!
+```
 
-- Report:
-  ```
-  GET /api/reports/salary-by-department
-  Response:
-  {
-    "Engineering": 250000.00,
-    "Marketing": 120000.00
-  }
-  ```
+### 5. Run the Server
+```bash
+php artisan serve
+```
 
-## Assumptions & Notes
+Visit: [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
-- Auth uses Laravel hashing (bcrypt/argon) — stored hashed in `users.password`.
-- The `employees.salary` column is DECIMAL(10,2).
-- Update endpoint performs a uniqueness check for `email` to allow updating other fields without changing email.
-- The project was partially implemented; I completed the Employee model and controller CRUD + filtering, and added README.
-- If you'd like, I can:
-  - Add API authentication via Sanctum for API endpoints.
-  - Provide seeders to create an admin user.
-  - Add front-end views or API tests.
+---
 
+## Database Structure
+
+### users table
+| Column | Type | Description |
+|--------|------|--------------|
+| id | int | Primary key |
+| name | varchar(100) | User name |
+| email | varchar(100) | Unique email |
+| password | varchar(255) | Hashed password |
+| role | enum('admin','user') | User role |
+| created_at | timestamp | Auto timestamp |
+| updated_at | timestamp | Auto timestamp |
+
+### employees table
+| Column | Type | Description |
+|--------|------|--------------|
+| id | int | Primary key |
+| name | varchar(100) | Employee name |
+| email | varchar(100) | Unique email |
+| position | varchar(100) | Job position |
+| department | varchar(100) | Department |
+| salary | decimal(12,2) | Salary amount |
+| created_at | timestamp | Auto timestamp |
+| updated_at | timestamp | Auto timestamp |
+
+---
+
+## Available Routes
+
+### Web Routes (Session-based Auth)
+| Method | URL | Description | Middleware |
+|---------|-----|-------------|-------------|
+| GET | /login | Login form | guest |
+| POST | /login | Process login | guest |
+| GET | /dashboard | Dashboard | auth |
+| GET | /employees | List all employees | auth |
+| GET | /employees/create | Add new employee form | auth, admin |
+| POST | /employees | Create employee | auth, admin |
+| GET | /employees/{id}/edit | Edit employee | auth, admin |
+| PUT | /employees/{id} | Update employee | auth, admin |
+| DELETE | /employees/{id} | Delete employee | auth, admin |
+| GET | /reports/salary-by-department | JSON report | auth |
+
+### API Example (optional if added)
+| Method | URL | Description |
+|---------|-----|-------------|
+| POST | /api/login | Login (returns token) |
+| GET | /api/employees | List employees |
+| GET | /api/reports/salary-by-department | Get salary report |
+
+---
+
+## Report Endpoint Example
+**GET /reports/salary-by-department**  
+Example JSON Output:
+```json
+{
+  "Engineering": 2500000,
+  "Marketing": 1200000
+}
+```
+
+---
+
+## Validation Rules
+| Field | Rules |
+|--------|--------|
+| name | required, string, max:100 |
+| email | required, email, unique:employees,email |
+| position | required, string |
+| department | required, string |
+| salary | required, numeric, min:0 |
+
+---
+
+## Roles & Access
+- **Admin:** Can manage all employees (CRUD + Reports)
+- **User:** Can only view employees and reports
+
+---
+
+## Notes
+- Built using Laravel 12.x and PHP 8.2
+- Tailwind CSS via Laravel Breeze UI
+- Database: MySQL or MariaDB
+- Followed MVC structure with controllers for authentication, employees, and reports
+
+---
+
+## Testing (Optional)
+You can test API endpoints using tools like **Postman** or **cURL**.
+
+Example cURL command:
+```bash
+curl -X GET http://127.0.0.1:8000/reports/salary-by-department  -H "Accept: application/json"
+```
+
+---
+
+## Author
+Developed by **Prince Charles**  
+For CBSoft Technical Test – Backend Developer (Laravel)
+
+---
+
+## License
+This project is open-source and free to use for educational or testing purposes.

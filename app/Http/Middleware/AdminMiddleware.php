@@ -12,13 +12,9 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Check if the user is logged in AND if their role is 'admin'
-        if (auth()->check() && auth()->user()->role === 'admin') {
-            return $next($request); // Allow access
+        if (! $request->user() || $request->user()->role !== 'admin') {
+            abort(403, 'Forbidden — Admins only.');
         }
-
-        // Redirect or abort if they are not an admin
-        // Redirect to home with an error message
-        return redirect('/dashboard')->with('error', 'Unauthorized access. Admin privileges required.');
+        return $next($request);
     }
 }
